@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package pt.um.sdle.timeline;
+option go_package = "timeline";
+
+
+message PostI {
+    string user = 1;
+    string text = 2;
+    string url = 3;
+}
