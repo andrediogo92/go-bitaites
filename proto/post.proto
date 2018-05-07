@@ -8,4 +8,5 @@ message PostI {
     string user = 1;
     string text = 2;
     string url = 3;
+    uint64 stamp = 4;
 }
