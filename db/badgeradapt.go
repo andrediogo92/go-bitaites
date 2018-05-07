@@ -38,47 +38,47 @@ func InitDB() (db DBWrapper, err error) {
 	return
 }
 
-func (d DBWrapper) readDB(closure readClosure, param interface{}) (val interface{}, err error) {
+func (d DBWrapper) readDB(cl readClosure, prm interface{}) (val interface{}, err error) {
 	err = d.db.View(func(txn *badger.Txn) error {
 		defer txn.Discard()
-		return closure(txn, param)
+		return cl(txn, prm)
 	})
-	val = param
+	val = prm
 	return
 }
 
-func (d DBWrapper) writeDB(closure writeClosure, param interface{}) (err error) {
+func (d DBWrapper) writeDB(cl writeClosure, prm interface{}) (err error) {
 	err = d.db.Update(func(txn *badger.Txn) error {
 		defer txn.Discard()
-		return closure(txn, param)
+		return cl(txn, prm)
 	})
 	return
 }
 
-func (d DBWrapper) iteratorDB(closure iteratorClosure, param interface{}) (val interface{}, err error) {
+func (d DBWrapper) iteratorDB(cl iteratorClosure, prm interface{}) (val interface{}, err error) {
 	err = d.db.View(func(txn *badger.Txn) error {
 		defer txn.Discard()
 		opts := badger.DefaultIteratorOptions
 		opts.PrefetchSize = 10
 		it := txn.NewIterator(opts)
 		defer it.Close()
-		return closure(it, param)
+		return cl(it, prm)
 	})
-	val = param
+	val = prm
 	return
 }
 
-func (d DBWrapper) keyIteratorDB(closure iteratorClosure, param interface{}) (val interface{}, err error) {
+func (d DBWrapper) keyIteratorDB(cl iteratorClosure, prm interface{}) (val interface{}, err error) {
 	err = d.db.View(func(txn *badger.Txn) error {
 		defer txn.Discard()
 		opts := badger.DefaultIteratorOptions
 		opts.PrefetchValues = false
 		it := txn.NewIterator(opts)
 		defer it.Close()
-		closure(it, param)
-		return closure(it, param)
+		cl(it, prm)
+		return cl(it, prm)
 	})
-	val = param
+	val = prm
 	return
 }
 
@@ -90,7 +90,20 @@ func (d DBWrapper) WriteToTimeline(new *timeline.Post) error {
 		post := new.(*timeline.Post)
 		bytes, err := post.AsBinary()
 		if err == nil {
-			b.Set(post.PostKey(), bytes)
+			b.Set(post.Key(), bytes)
+			b.Commit(nil)
+		}
+		return
+	}
+	return d.writeDB(wr, new)
+}
+
+func (d DBWrapper) WriteTimeline(new *timeline.Timeline) error {
+	wr := func (b *badger.Txn, new interface{}) (err error) {
+		timeline := new.(*timeline.Timeline)
+		bytes, err := timeline.AsBinary()
+		if err == nil {
+			b.Set(timeline.Key(), bytes)
 			b.Commit(nil)
 		}
 		return
