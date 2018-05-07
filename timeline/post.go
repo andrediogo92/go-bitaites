@@ -3,9 +3,10 @@ package timeline
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/binary"
 	"net/url"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 )
 
 type Post struct {
@@ -13,9 +14,12 @@ type Post struct {
 	url *url.URL
 }
 
-func (post *Post) PostKey() []byte {
+func (post *Post) Key() []byte {
+	bs := make([]byte , 8)
 	bbf := new(bytes.Buffer)
-	bbf.WriteString(post.post.String() + post.url.EscapedPath())
+	binary.LittleEndian.PutUint64(bs, post.post.Stamp)
+	bbf.Write(bs)
+	bbf.WriteString(post.post.User)
 	return sha256.Sum256(bbf.Bytes())[:]
 }
 
@@ -24,13 +28,14 @@ func (post *Post) AsBinary() (ret []byte, err error) {
 	return
 }
 
-func PostFromBinary(post []byte) (new *Post, err error) {
+func (post *Post) FromBinary(encoded []byte) (err error) {
 	val := &PostI{}
-	err = proto.Unmarshal(post, val)
+	err = proto.Unmarshal(encoded, val)
 	if err == nil {
-		url, err := url.ParseRequestURI(val.Url)
+		rurl, err := url.ParseRequestURI(val.Url)
 		if err == nil {
-			new = &Post{post: val, url: url}
+			post.post = val
+			post.url = rurl
 		}
 	}
 	return

@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 
 	"github.com/Seriyin/go-bitaites/db"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 )
 
 type Timeline struct{
@@ -12,7 +12,7 @@ type Timeline struct{
 }
 
 
-func (timeline *Timeline) TimelineKey() []byte {
+func (timeline *Timeline) Key() []byte {
 	bs := make([]byte, 4)
 	binary.LittleEndian.PutUint32(bs, timeline.timeline.Id)
 	return bs
@@ -20,6 +20,16 @@ func (timeline *Timeline) TimelineKey() []byte {
 
 func (timeline *Timeline) AsBinary() (ret []byte, err error) {
 	ret, err = proto.Marshal(timeline.timeline)
+	return
+}
+
+
+func (timeline *Timeline) FromBinary(encoded []byte) (err error) {
+	val := &TimelineI{}
+	err = proto.Unmarshal(encoded, val)
+	if err == nil {
+		timeline.timeline = val
+	}
 	return
 }
 
@@ -31,13 +41,4 @@ func TimelineFromDB(wrapper db.DBWrapper) (*Timeline){
 		struct{}{},
 		make([]byte,0),
 		0}}
-}
-
-func TimelineFromBinary(encoded []byte) (timeline *Timeline, err error) {
-	val := &TimelineI{}
-	err = proto.Unmarshal(encoded, val)
-	if err == nil {
-		timeline = &Timeline{val}
-	}
-	return
 }
