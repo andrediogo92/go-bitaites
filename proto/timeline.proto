@@ -4,12 +4,8 @@ package pt.um.sdle.timeline;
 option go_package = "timeline";
 import "post.proto";
 
-message TimelineI {
-    uint32 id = 1;
-    message PostStream {
-        repeated PostI posts = 2;
-    }
-    map<string, PostStream> feedMap = 3;
-    PostStream postHistory = 4;
+message PostStream {
+    string user = 1;
+    repeated PostI posts = 2;
 }
 
