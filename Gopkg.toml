@@ -24,6 +24,7 @@
 #   go-tests = true
 #   unused-packages = true
 
+required = ["github.com/dgraph-io/badger"]
 
 [prune]
   go-tests = true
@@ -31,4 +32,4 @@
 
 [[constraint]]
   name = "github.com/dgraph-io/badger"
-  version = "1.4.0"
+  version = "1.5.0"
