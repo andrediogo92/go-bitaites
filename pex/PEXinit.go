@@ -1,4 +1,4 @@
-package pexbit
+package pex
 
 import "github.com/tendermint/go-p2p" 
 
