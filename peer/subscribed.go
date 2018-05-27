@@ -9,12 +9,13 @@ import (
 )
 
 type Subscribed struct {
-	list map[string]net.Addr
+	list map[ID]net.Addr
 }
 
 type Subbing struct {
 	Subscribed
-	sockets []mangos.Socket
+	subs []mangos.Socket
+	directs []mangos.Socket
 }
 
 var sublist *Subscribed
@@ -27,13 +28,13 @@ func init()  {
 	case nil:
 	case badger.ErrKeyNotFound:
 		sublist = &Subscribed{
-			make(map[string]net.Addr, 50),
+			make(map[ID]net.Addr, 50),
 		}
 	default:
 		panic(err)
 	}
 }
 
-func (s *Subscribed) SubList() (map[string]net.Addr) {
+func (s *Subscribed) SubList() (map[ID]net.Addr) {
 	return s.list
 }
