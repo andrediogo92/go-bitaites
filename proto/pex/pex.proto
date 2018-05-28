@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package pt.um.sdle.timeline;
+option go_package = "pex/pb";
+
+message Message {
+    enum MessageType {
+        PING = 0;
+        PONG = 1;
+        FIND_NODE = 2;
+        GET_PEERS = 3;
+        ANNOUNCE = 4;
+        ERROR = 5;
+    }
+
+    message Address {
+        string net = 1;
+        int32 port = 2;
+    }
+
+    MessageType type = 1;
+
+    message Peer {
+        Address addr = 1;
+        string id = 2;
+    }
+}
+
