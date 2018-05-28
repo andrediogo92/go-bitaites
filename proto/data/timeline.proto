@@ -1,7 +1,9 @@
 syntax = "proto3";
 
 package pt.um.sdle.timeline;
-option go_package = "timeline";
+option go_package = "timeline/pb";
+
+
 import "post.proto";
 
 message PostStream {
