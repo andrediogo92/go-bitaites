@@ -1,3 +1,26 @@
+/**
+The MIT License (MIT)
+
+Copyright (c) 2016 Protocol Labs, Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
 package pex
 
 import (
@@ -21,7 +44,7 @@ type RoutingTable struct {
 	tabLock sync.RWMutex
 
 	// latency metrics
-	metrics pstore.Metrics
+	metrics Metrics
 
 	// Maximum acceptable latency for peers in this cluster
 	maxLatency time.Duration
@@ -30,23 +53,23 @@ type RoutingTable struct {
 	Buckets    []*Bucket
 	bucketsize int
 
-	// notification functions
-	PeerRemoved func(peer.ID)
-	PeerAdded   func(peer.ID)
+	// notification channels
+	PeerRemoved chan peer.ID
+	PeerAdded   chan peer.ID
 }
 
 // NewRoutingTable creates a new routing table with a given bucketsize, local ID, and latency tolerance.
-func NewRoutingTable(bucketsize int, localID peer.ID, latency time.Duration, m pstore.Metrics) *RoutingTable {
+// Make sure to consume Peer channels or there will be no progress.
+func NewRoutingTable(bucketsize int, localID peer.ID, latency time.Duration, m Metrics) *RoutingTable {
 	rt := &RoutingTable{
 		Buckets:     []*Bucket{newBucket()},
 		bucketsize:  bucketsize,
 		local:       localID,
 		maxLatency:  latency,
 		metrics:     m,
-		PeerRemoved: func(peer.ID) {},
-		PeerAdded:   func(peer.ID) {},
+		PeerRemoved: make(chan peer.ID, 1),
+		PeerAdded:   make(chan peer.ID, 1),
 	}
-
 	return rt
 }
 
@@ -78,18 +101,18 @@ func (rt *RoutingTable) Update(p peer.ID) {
 
 	// New peer, add to bucket
 	bucket.PushFront(p)
-	rt.PeerAdded(p)
+	rt.PeerAdded <- p
 
 	// Are we past the max bucket size?
 	if bucket.Len() > rt.bucketsize {
 		// If this bucket is the rightmost bucket, and its full
 		// we need to split it and create a new bucket
 		if bucketID == len(rt.Buckets)-1 {
-			rt.PeerRemoved(rt.nextBucket())
+			rt.PeerRemoved <- rt.nextBucket()
 			return
 		} else {
 			// If the bucket cant split kick out least active node
-			rt.PeerRemoved(bucket.PopBack())
+			rt.PeerRemoved <- bucket.PopBack()
 			return
 		}
 	}
@@ -109,7 +132,7 @@ func (rt *RoutingTable) Remove(p peer.ID) {
 
 	bucket := rt.Buckets[bucketID]
 	bucket.Remove(p)
-	rt.PeerRemoved(p)
+	rt.PeerRemoved <- p
 }
 
 func (rt *RoutingTable) nextBucket() peer.ID {
@@ -225,7 +248,7 @@ func (rt *RoutingTable) Print() {
 		b.lk.RLock()
 		for e := b.list.Front(); e != nil; e = e.Next() {
 			p := e.Value.(peer.ID)
-			fmt.Printf("\t\t- %s %s\n", p.Pretty(), rt.metrics.LatencyEWMA(p).String())
+			fmt.Printf("\t\t- %s %s\n", p, rt.metrics.LatencyEWMA(p).String())
 		}
 		b.lk.RUnlock()
 	}
