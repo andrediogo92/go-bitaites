@@ -7,8 +7,9 @@ import (
 	"github.com/dgraph-io/badger"
 )
 
-func (wrapper *DBWrapper) GetMyKeyPair(b []byte) (id *timeline.OwnId, err error) {
-	if wrapper == nil {
+func (wrapper *DBWrapper) GetMyKeyPair(user string) (id *timeline.OwnId, err error) {
+	if wrapper != nil {
+		b := []byte("keypair" + user)
 		db.readDB(func (bdg *badger.Txn, key []byte) (err error)  {
 			bs := &bytes.Buffer{}
 			decoder, err := decodeValue(bs, bdg, key)
@@ -25,8 +26,9 @@ func (wrapper *DBWrapper) GetMyKeyPair(b []byte) (id *timeline.OwnId, err error)
 
 
 
-func (wrapper *DBWrapper) GetMyUser(b []byte) (user string, err error) {
-	if wrapper == nil {
+func (wrapper *DBWrapper) GetMyUser() (user string, err error) {
+	if wrapper != nil {
+		b := []byte("id-user")
 		var userPtr *[]byte
 		db.readDB(func (bdg *badger.Txn, key []byte) (err error)  {
 			it, err := bdg.Get(key)

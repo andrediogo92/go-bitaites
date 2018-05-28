@@ -6,7 +6,7 @@ import (
 "log"
 "math/rand"
 
-"github.com/dgraph-io/badger"
+	"github.com/dgraph-io/badger"
 "github.com/pkg/errors"
 
 )
@@ -60,6 +60,7 @@ func decodeValue(bs *bytes.Buffer, bdg *badger.Txn, key []byte) (decoder *gob.De
 	return
 }
 
+
 func (wrapper DBWrapper) readDB(cl readClosure, key []byte) error {
 	return wrapper.db.View(func(txn *badger.Txn) error {
 		defer txn.Discard()
@@ -109,6 +110,7 @@ func (wrapper DBWrapper) GetNewId() (id uint64) {
 	}
 	return
 }
+
 
 
 

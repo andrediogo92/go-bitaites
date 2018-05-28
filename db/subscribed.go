@@ -7,8 +7,9 @@ import (
 	"github.com/dgraph-io/badger"
 )
 
-func (wrapper *DBWrapper) GetSubList(b []byte) (sublist *peer.Subscribed, err error) {
+func (wrapper *DBWrapper) GetSubList() (sublist *peer.Subscribed, err error) {
 	if wrapper == nil {
+		b := []byte("sublist")
 		db.readDB(func(txn *badger.Txn, key []byte) error {
 			bs := &bytes.Buffer{}
 			decoder, err := decodeValue(bs, txn, key)

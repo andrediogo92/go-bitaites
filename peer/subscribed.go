@@ -23,7 +23,7 @@ var sublist *Subscribed
 func init()  {
 	dwrapper := db.GetDBWrapper()
 	var err error
-	sublist, err = dwrapper.GetSubList([]byte("sublist"))
+	sublist, err = dwrapper.GetSubList()
 	switch err {
 	case nil:
 	case badger.ErrKeyNotFound:

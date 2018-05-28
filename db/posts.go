@@ -36,7 +36,7 @@ func mergeNewPost(existing []byte, new []byte) []byte {
 	into the user's own post feed.
  */
 func (wrapper DBWrapper) WriteToTimeline(new *timeline.Post) error {
-	if wrapper.db == nil {
+	if wrapper.db != nil {
 		merge := wrapper.db.GetMergeOperator([]byte(
 			timeline.GetPosts().Id()),
 			mergeNewPost,
@@ -44,9 +44,9 @@ func (wrapper DBWrapper) WriteToTimeline(new *timeline.Post) error {
 		addPostToMerge(merge, new)
 		merge.Stop()
 		return wrapper.writeDB(func (b *badger.Txn) (err error) {
-			bytes, err := new.AsBinary()
+			bs, err := new.AsBinary()
 			if err == nil {
-				b.Set(new.Key(), bytes)
+				b.Set(new.Key(), bs)
 			}
 			return
 		})
@@ -57,8 +57,9 @@ func (wrapper DBWrapper) WriteToTimeline(new *timeline.Post) error {
 
 
 
-func (wrapper *DBWrapper) GetOwnPosts(b []byte) (posts *timeline.Posts, err error) {
-	if wrapper == nil {
+func (wrapper *DBWrapper) GetOwnPosts() (posts *timeline.Posts, err error) {
+	if wrapper.db != nil {
+		b := []byte("own-posts")
 		db.readDB(func (bdg *badger.Txn, key []byte) (err error)  {
 			bs := &bytes.Buffer{}
 			decoder, err := decodeValue(bs, bdg, key)
@@ -74,7 +75,7 @@ func (wrapper *DBWrapper) GetOwnPosts(b []byte) (posts *timeline.Posts, err erro
 }
 
 func (wrapper DBWrapper) DumpToSubscribed(key []byte, new []*timeline.Post) error {
-	if wrapper.db == nil {
+	if wrapper.db != nil {
 		merge := wrapper.db.GetMergeOperator(key, mergeNewPost, 10 * time.Millisecond)
 		for _, v := range new {
 			addPostToMerge(merge, v)
