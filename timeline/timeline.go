@@ -13,27 +13,26 @@ import (
 
 
 "github.com/Seriyin/go-bitaites/db"
-"github.com/dgraph-io/badger"
+	"github.com/Seriyin/go-bitaites/peer"
+	"github.com/dgraph-io/badger"
 
 )
 
 type timeline struct{
-	feedMap map[string]*Posts
+	feedMap map[peer.ID]*Posts
 	timeline []*Post
 }
 
-type Id struct {
-	user string
-	crypto.PublicKey
-}
 
 type OwnId struct {
-	Id
+	peer.ID
+	*peer.UserID
 	crypto.PrivateKey
 }
 
+
 type Posts struct{
-	id string
+	id peer.ID
 	hashes []string
 }
 
@@ -47,19 +46,20 @@ var t = &timeline{
 
 func init()  {
 	dbWrapper := db.GetDBWrapper()
-	myuser, err := dbWrapper.GetMyUser([]byte("id-user"))
+	myuser, err := dbWrapper.GetMyUser()
 	switch err {
-	case nil: myid, err = dbWrapper.GetMyKeyPair([]byte("keypair" + myuser))
+	case nil:
+		myid, err = dbWrapper.GetMyKeyPair(myuser)
 		switch err {
 		case nil:
-			own, err = dbWrapper.GetOwnPosts([]byte("own-posts"))
+			own, err = dbWrapper.GetOwnPosts()
 			switch err {
 			case nil:
 			case badger.ErrKeyNotFound:
 				//Key not found means generate new Posts
 				own = &Posts{
 					"own-posts",
-					make([]string, 10),
+					make([]string, 0, 10),
 				}
 			default:
 				panic(err)
@@ -83,11 +83,10 @@ func init()  {
 func GenerateNewId(user string) *OwnId {
 	pk, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
 	if err == nil {
+		uid := peer.NewUserID(user, pk.Public())
 		return &OwnId{
-			Id{
-				user,
-				pk.Public(),
-			},
+			uid.ComputeSha256(),
+			uid,
 			pk,
 		}
 	} else {
@@ -114,7 +113,7 @@ func GetPosts() (*Posts) {
 	return own
 }
 
-func (posts *Posts) Id() (string) {
+func (posts *Posts) Id() (peer.ID) {
 	return posts.id
 }
 
